@@ -406,13 +406,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   cameraAtLeft: 3
   cameraAtRight: 2
-  xPosOffset: 2
+  nextPlayerXOffset: 2
   targetMask:
     serializedVersion: 2
     m_Bits: 8
-  rayOffset: 0.3
-  rayLength: 0.5
-  amountOfCasts: 5
+  rayOffset: 0.5
+  rayLength: 0.8
+  amountOfRays: 3
 --- !u!1 &224693142
 GameObject:
   m_ObjectHideFlags: 0
@@ -458,13 +458,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   cameraAtLeft: 0
   cameraAtRight: 1
-  xPosOffset: 2
+  nextPlayerXOffset: 2
   targetMask:
     serializedVersion: 2
     m_Bits: 8
-  rayOffset: 0.3
-  rayLength: 0.5
-  amountOfCasts: 5
+  rayOffset: 0.35
+  rayLength: 0.8
+  amountOfRays: 3
 --- !u!1 &270455324
 GameObject:
   m_ObjectHideFlags: 0
@@ -510,13 +510,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   cameraAtLeft: 5
   cameraAtRight: 4
-  xPosOffset: 2
+  nextPlayerXOffset: 2
   targetMask:
     serializedVersion: 2
     m_Bits: 8
-  rayOffset: 0.3
-  rayLength: 0.5
-  amountOfCasts: 5
+  rayOffset: 0.6
+  rayLength: 0.8
+  amountOfRays: 3
 --- !u!1 &275036939
 GameObject:
   m_ObjectHideFlags: 0
@@ -1619,13 +1619,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   cameraAtLeft: 1
   cameraAtRight: 2
-  xPosOffset: 2
+  nextPlayerXOffset: 2
   targetMask:
     serializedVersion: 2
     m_Bits: 8
-  rayOffset: 0.3
-  rayLength: 0.5
-  amountOfCasts: 7
+  rayOffset: 0.6
+  rayLength: 0.8
+  amountOfRays: 3
 --- !u!1 &1004305998
 GameObject:
   m_ObjectHideFlags: 0
@@ -5496,13 +5496,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   cameraAtLeft: 7
   cameraAtRight: 6
-  xPosOffset: 2
+  nextPlayerXOffset: 2
   targetMask:
     serializedVersion: 2
     m_Bits: 8
-  rayOffset: 0.3
-  rayLength: 0.5
-  amountOfCasts: 5
+  rayOffset: 0.5
+  rayLength: 0.8
+  amountOfRays: 3
 --- !u!1 &1231026892
 GameObject:
   m_ObjectHideFlags: 0
@@ -6110,13 +6110,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   cameraAtLeft: 2
   cameraAtRight: 4
-  xPosOffset: 2
+  nextPlayerXOffset: 2
   targetMask:
     serializedVersion: 2
     m_Bits: 8
-  rayOffset: 0.3
-  rayLength: 0.5
-  amountOfCasts: 5
+  rayOffset: 0.35
+  rayLength: 0.8
+  amountOfRays: 3
 --- !u!1 &1696972987
 GameObject:
   m_ObjectHideFlags: 0
@@ -6482,13 +6482,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   cameraAtLeft: 5
   cameraAtRight: 6
-  xPosOffset: 2
+  nextPlayerXOffset: 2
   targetMask:
     serializedVersion: 2
     m_Bits: 8
-  rayOffset: 0.3
-  rayLength: 0.5
-  amountOfCasts: 5
+  rayOffset: 0.5
+  rayLength: 0.8
+  amountOfRays: 3
 --- !u!1 &2106835690
 GameObject:
   m_ObjectHideFlags: 0
