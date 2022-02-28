@@ -1,24 +1,28 @@
 using System;
 using Cinemachine;
+using DefaultNamespace;
 using TarodevController;
+using UnityEditor;
 using UnityEngine;
 
 public class CameraFollow : MonoBehaviour
 {
     [SerializeField] private Transform[] gridPoints;
-    [SerializeField] private float xPosOffset = 2f;
     [SerializeField] private CinemachineVirtualCamera virtualCamera;
 
-    private static event Action<int, Transform> CameraTriggerReached;
-    public static void OnCameraTriggerReached(int cameraIndex, Transform trigger) => 
-        CameraTriggerReached?.Invoke(cameraIndex, trigger);
+    [Header("Debug")] 
+    [SerializeField] private bool debug = true;
+    [SerializeField, Range(0f, 1f)] private float debugRadius = .5f;
 
-    private int currentCamera;
-    private Transform player;
+    private static event Action<int, Vector2> CameraTriggerReached;
+    public static void OnCameraTriggerReached(int cameraIndex, Vector2 outputPosition) => 
+        CameraTriggerReached?.Invoke(cameraIndex, outputPosition);
+
+    private Transform _player;
 
     private void Awake()
     {
-        player = FindObjectOfType<PlayerController>().transform;
+        _player = FindObjectOfType<PlayerController>().transform;
     }
 
     private void OnEnable()
@@ -31,18 +35,24 @@ public class CameraFollow : MonoBehaviour
         CameraTriggerReached -= HandleCameraTriggerReached;
     }
 
-    private void HandleCameraTriggerReached(int newCamera, Transform trigger)
+    private void HandleCameraTriggerReached(int newCamera, Vector2 outputPosition)
     {
-        var camera = gridPoints[newCamera];
-        virtualCamera.Follow = camera;
-        virtualCamera.LookAt = camera;
+        var targetCamera = gridPoints[newCamera];
+        virtualCamera.Follow = targetCamera;
+        virtualCamera.LookAt = targetCamera;
 
-        var xOffset = currentCamera < newCamera ? xPosOffset : -xPosOffset;
-        var playerPos = trigger.position;
-        playerPos.x += xOffset;
-        player.position = playerPos;
-        
-        currentCamera = newCamera;
+        _player.position = outputPosition;
     }
-    
+
+    private void OnDrawGizmosSelected()
+    {
+        if (gridPoints.Length <= 0 || !debug) return;
+
+        for (int i = 0; i < gridPoints.Length; i++)
+        {
+            var position = gridPoints[i].position;
+            Gizmos.DrawWireSphere(position, debugRadius);
+            Handles.Label(position, $"Point {i}");
+        }
+    }
 }
