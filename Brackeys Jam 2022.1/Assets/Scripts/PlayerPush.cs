@@ -3,15 +3,15 @@ using UnityEngine;
 
 public class PlayerPush : MonoBehaviour
 {
-    public float Range = 2f;
+    public float range = 1f;
     public LayerMask targetLayer;
     public Transform pushOrigin;
     public float force;
 
     private Vector2 difference;
     private IPlayerController _player;
-    
-    void Awake() => _player = GetComponent<IPlayerController>();
+
+    private void Awake() => _player = GetComponent<IPlayerController>();
     
     private void Update()
     {
@@ -26,7 +26,7 @@ public class PlayerPush : MonoBehaviour
     private void Push()
     {
         RaycastHit2D hit = Physics2D.Linecast(pushOrigin.position, 
-            pushOrigin.position + pushOrigin.localScale.x * Vector3.right * Range, 
+            pushOrigin.position + pushOrigin.localScale.x * Vector3.right * range, 
             targetLayer);
         if (hit && hit.transform.TryGetComponent(out PushableObject pushableObject))
         { 
@@ -37,7 +37,7 @@ public class PlayerPush : MonoBehaviour
 
     private void OnDrawGizmosSelected()
     {
-        Gizmos.DrawLine(pushOrigin.position, pushOrigin.position + pushOrigin.localScale.x * Vector3.right * Range);
+        Gizmos.DrawLine(pushOrigin.position, pushOrigin.position + pushOrigin.localScale.x * Vector3.right * range);
         Gizmos.color = Color.blue;
         Gizmos.DrawLine(pushOrigin.right, difference * force); 
     }
