@@ -6,19 +6,92 @@ namespace TarodevController {
     public class PlayerController : MonoBehaviour, IPlayerController {
         // Public for external hooks
         public Vector3 Velocity { get; private set; }
-        public FrameInput Input { get; private set; }
+        public PlayerInput PlayerInput => _playerInput;
         public bool JumpingThisFrame { get; private set; }
         public bool LandingThisFrame { get; private set; }
         public Vector3 RawMovement { get; private set; }
         public bool Grounded => _colDown;
 
+        private PlayerInput _playerInput;
         private Vector3 _lastPosition;
         private float _currentHorizontalSpeed, _currentVerticalSpeed;
 
         // This is horrible, but for some reason colliders are not fully established when update starts...
         private bool _active;
-        void Awake() => Invoke(nameof(Activate), 0.5f);
-        void Activate() =>  _active = true;
+
+        private void Awake()
+        {
+            Invoke(nameof(Activate), 0.5f);
+            _playerInput = new PlayerInput();
+        }
+
+        private void Activate() =>  _active = true;
+
+        private void OnEnable()
+        {
+            _playerInput.OnJump += HandleJump;
+            _playerInput.OnMovementXChange += HandleMovementXChange;
+        }
+
+        private void OnDisable()
+        {
+            _playerInput.OnJump -= HandleJump;
+            _playerInput.OnMovementXChange -= HandleMovementXChange;
+        }
+
+        private void HandleJump(bool jumpDown, bool jumpUp)
+        {
+            if (jumpDown)
+            {
+                _lastJumpPressed = Time.time;
+            }
+            
+            // Jump if: grounded or within coyote threshold || sufficient jump buffer
+            if (jumpDown && CanUseCoyote || HasBufferedJump) {
+                _currentVerticalSpeed = _jumpHeight;
+                _endedJumpEarly = false;
+                _coyoteUsable = false;
+                _timeLeftGrounded = float.MinValue;
+                JumpingThisFrame = true;
+            }
+            else {
+                JumpingThisFrame = false;
+            }
+
+            // End the jump early if button released
+            if (!_colDown && jumpUp && !_endedJumpEarly && Velocity.y > 0) {
+                // _currentVerticalSpeed = 0;
+                _endedJumpEarly = true;
+            }
+
+            if (_colUp) {
+                if (_currentVerticalSpeed > 0) _currentVerticalSpeed = 0;
+            }
+        }
+
+        private void HandleMovementXChange(float x)
+        {
+            if (x != 0) {
+                // Set horizontal move speed
+                _currentHorizontalSpeed += x * _acceleration * Time.deltaTime;
+
+                // clamped by max frame movement
+                _currentHorizontalSpeed = Mathf.Clamp(_currentHorizontalSpeed, -_moveClamp, _moveClamp);
+
+                // Apply bonus at the apex of a jump
+                var apexBonus = Mathf.Sign(x) * _apexBonus * _apexPoint;
+                _currentHorizontalSpeed += apexBonus * Time.deltaTime;
+            }
+            else {
+                // No input. Let's slow the character down
+                _currentHorizontalSpeed = Mathf.MoveTowards(_currentHorizontalSpeed, 0, _deAcceleration * Time.deltaTime);
+            }
+
+            if (_currentHorizontalSpeed > 0 && _colRight || _currentHorizontalSpeed < 0 && _colLeft) {
+                // Don't walk through walls
+                _currentHorizontalSpeed = 0;
+            }
+        }
         
         private void Update() {
             if(!_active) return;
@@ -28,11 +101,9 @@ namespace TarodevController {
 
             GatherInput();
             RunCollisionChecks();
-
-            CalculateWalk(); // Horizontal movement
+            
             CalculateJumpApex(); // Affects fall speed, so calculate before gravity
             CalculateGravity(); // Vertical movement
-            CalculateJump(); // Possibly overrides vertical
 
             MoveCharacter(); // Actually perform the axis movement
         }
@@ -41,15 +112,7 @@ namespace TarodevController {
         #region Gather Input
 
         private void GatherInput() {
-            Input = new FrameInput {
-                JumpDown = UnityEngine.Input.GetButtonDown("Jump"),
-                JumpUp = UnityEngine.Input.GetButtonUp("Jump"),
-                X = UnityEngine.Input.GetAxisRaw("Horizontal"),
-                Push = UnityEngine.Input.GetKeyDown(KeyCode.G)
-            };
-            if (Input.JumpDown) {
-                _lastJumpPressed = Time.time;
-            }
+            _playerInput.Update();
         }
 
         #endregion
@@ -144,29 +207,6 @@ namespace TarodevController {
         [SerializeField] private float _deAcceleration = 60f;
         [SerializeField] private float _apexBonus = 2;
 
-        private void CalculateWalk() {
-            if (Input.X != 0) {
-                // Set horizontal move speed
-                _currentHorizontalSpeed += Input.X * _acceleration * Time.deltaTime;
-
-                // clamped by max frame movement
-                _currentHorizontalSpeed = Mathf.Clamp(_currentHorizontalSpeed, -_moveClamp, _moveClamp);
-
-                // Apply bonus at the apex of a jump
-                var apexBonus = Mathf.Sign(Input.X) * _apexBonus * _apexPoint;
-                _currentHorizontalSpeed += apexBonus * Time.deltaTime;
-            }
-            else {
-                // No input. Let's slow the character down
-                _currentHorizontalSpeed = Mathf.MoveTowards(_currentHorizontalSpeed, 0, _deAcceleration * Time.deltaTime);
-            }
-
-            if (_currentHorizontalSpeed > 0 && _colRight || _currentHorizontalSpeed < 0 && _colLeft) {
-                // Don't walk through walls
-                _currentHorizontalSpeed = 0;
-            }
-        }
-
         #endregion
 
         #region Gravity
@@ -217,30 +257,6 @@ namespace TarodevController {
             }
             else {
                 _apexPoint = 0;
-            }
-        }
-
-        private void CalculateJump() {
-            // Jump if: grounded or within coyote threshold || sufficient jump buffer
-            if (Input.JumpDown && CanUseCoyote || HasBufferedJump) {
-                _currentVerticalSpeed = _jumpHeight;
-                _endedJumpEarly = false;
-                _coyoteUsable = false;
-                _timeLeftGrounded = float.MinValue;
-                JumpingThisFrame = true;
-            }
-            else {
-                JumpingThisFrame = false;
-            }
-
-            // End the jump early if button released
-            if (!_colDown && Input.JumpUp && !_endedJumpEarly && Velocity.y > 0) {
-                // _currentVerticalSpeed = 0;
-                _endedJumpEarly = true;
-            }
-
-            if (_colUp) {
-                if (_currentVerticalSpeed > 0) _currentVerticalSpeed = 0;
             }
         }
 

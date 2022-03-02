@@ -23,21 +23,17 @@ namespace TarodevController {
         private bool _playerGrounded;
         private ParticleSystem.MinMaxGradient _currentGradient;
         private Vector2 _movement;
+        private PlayerInput _playerInput;
 
-        void Awake() => _player = GetComponentInParent<IPlayerController>();
+        private void Start()
+        {
+            _player = GetComponentInParent<IPlayerController>();
+            _playerInput = _player.PlayerInput;
+            _playerInput.OnMovementXChange += HandleMovementXChange;
+        }
 
-        void Update() {
+        private void Update() {
             if (_player == null) return;
-
-            // Flip the sprite
-            if (_player.Input.X != 0) transform.localScale = new Vector3(_player.Input.X > 0 ? 1 : -1, 1, 1);
-
-            // Lean while running
-            var targetRotVector = new Vector3(0, 0, Mathf.Lerp(-_maxTilt, _maxTilt, Mathf.InverseLerp(-1, 1, _player.Input.X)));
-            _anim.transform.rotation = Quaternion.RotateTowards(_anim.transform.rotation, Quaternion.Euler(targetRotVector), _tiltSpeed * Time.deltaTime);
-
-            // Speed up idle while running
-            _anim.SetFloat(IdleSpeedKey, Mathf.Lerp(1, _maxIdleSpeed, Mathf.Abs(_player.Input.X)));
 
             // Splat
             if (_player.LandingThisFrame) {
@@ -82,12 +78,26 @@ namespace TarodevController {
             _anim.SetFloat(MovementSpeedKey, _movement.x);
         }
 
-        private void OnDisable() {
-            _moveParticles.Stop();
-        }
-
         private void OnEnable() {
             _moveParticles.Play();
+        }
+        
+        private void OnDisable() {
+            _moveParticles.Stop();
+            _playerInput.OnMovementXChange -= HandleMovementXChange;
+        }
+
+        private void HandleMovementXChange(float x)
+        {
+            // Flip the sprite
+            if (x != 0) transform.localScale = new Vector3(x > 0 ? 1 : -1, 1, 1);
+            
+            // Lean while running
+            var targetRotVector = new Vector3(0, 0, Mathf.Lerp(-_maxTilt, _maxTilt, Mathf.InverseLerp(-1, 1, x)));
+            _anim.transform.rotation = Quaternion.RotateTowards(_anim.transform.rotation, Quaternion.Euler(targetRotVector), _tiltSpeed * Time.deltaTime);
+
+            // Speed up idle while running
+            _anim.SetFloat(IdleSpeedKey, Mathf.Lerp(1, _maxIdleSpeed, Mathf.Abs(x)));
         }
 
         void SetColor(ParticleSystem ps) {

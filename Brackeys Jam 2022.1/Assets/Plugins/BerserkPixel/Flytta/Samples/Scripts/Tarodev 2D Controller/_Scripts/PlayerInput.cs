@@ -1,10 +1,15 @@
+using System;
 using UnityEngine;
 
 namespace TarodevController
 {
     public class PlayerInput
     {
-        public FrameInput Input { get; private set; }
+        private FrameInput Input { get; set; }
+
+        public Action<bool, bool> OnJump = delegate { };
+        public Action<float> OnMovementXChange = delegate { };
+        public Action OnPushPressed = delegate {  };
 
         public void Update()
         {
@@ -14,6 +19,15 @@ namespace TarodevController
                 X = UnityEngine.Input.GetAxisRaw("Horizontal"),
                 Push = UnityEngine.Input.GetKeyDown(KeyCode.G)
             };
+
+            OnJump?.Invoke(Input.JumpDown, Input.JumpUp);
+            
+            OnMovementXChange?.Invoke(Input.X);
+
+            if (Input.Push)
+            {
+                OnPushPressed?.Invoke();
+            }
         }
     }
 }
