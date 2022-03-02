@@ -10,9 +10,11 @@ namespace TarodevController {
         public bool JumpingThisFrame { get; private set; }
         public bool LandingThisFrame { get; private set; }
         public Vector3 RawMovement { get; private set; }
-        public bool Grounded => _colDown;
+        public bool Grounded => _playerCollision.ColDown;
 
         private PlayerInput _playerInput;
+        private PlayerCollision _playerCollision;
+        
         private Vector3 _lastPosition;
         private float _currentHorizontalSpeed, _currentVerticalSpeed;
 
@@ -23,6 +25,7 @@ namespace TarodevController {
         {
             Invoke(nameof(Activate), 0.5f);
             _playerInput = new PlayerInput();
+            _playerCollision = GetComponent<PlayerCollision>();
         }
 
         private void Activate() =>  _active = true;
@@ -47,11 +50,10 @@ namespace TarodevController {
             }
             
             // Jump if: grounded or within coyote threshold || sufficient jump buffer
-            if (jumpDown && CanUseCoyote || HasBufferedJump) {
+            if (jumpDown && _playerCollision.CanUseCoyote || HasBufferedJump) {
                 _currentVerticalSpeed = _jumpHeight;
                 _endedJumpEarly = false;
-                _coyoteUsable = false;
-                _timeLeftGrounded = float.MinValue;
+                _playerCollision.ResetJump();
                 JumpingThisFrame = true;
             }
             else {
@@ -59,12 +61,12 @@ namespace TarodevController {
             }
 
             // End the jump early if button released
-            if (!_colDown && jumpUp && !_endedJumpEarly && Velocity.y > 0) {
+            if (!_playerCollision.ColDown && jumpUp && !_endedJumpEarly && Velocity.y > 0) {
                 // _currentVerticalSpeed = 0;
                 _endedJumpEarly = true;
             }
 
-            if (_colUp) {
+            if (_playerCollision.ColUp) {
                 if (_currentVerticalSpeed > 0) _currentVerticalSpeed = 0;
             }
         }
@@ -87,7 +89,7 @@ namespace TarodevController {
                 _currentHorizontalSpeed = Mathf.MoveTowards(_currentHorizontalSpeed, 0, _deAcceleration * Time.deltaTime);
             }
 
-            if (_currentHorizontalSpeed > 0 && _colRight || _currentHorizontalSpeed < 0 && _colLeft) {
+            if (_currentHorizontalSpeed > 0 && _playerCollision.ColRight || _currentHorizontalSpeed < 0 && _playerCollision.ColLeft) {
                 // Don't walk through walls
                 _currentHorizontalSpeed = 0;
             }
@@ -100,7 +102,7 @@ namespace TarodevController {
             _lastPosition = transform.position;
 
             GatherInput();
-            RunCollisionChecks();
+            _playerCollision.RunCollisionChecks();
             
             CalculateJumpApex(); // Affects fall speed, so calculate before gravity
             CalculateGravity(); // Vertical movement
@@ -113,89 +115,6 @@ namespace TarodevController {
 
         private void GatherInput() {
             _playerInput.Update();
-        }
-
-        #endregion
-
-        #region Collisions
-
-        [Header("COLLISION")] [SerializeField] private Bounds _characterBounds;
-        [SerializeField] private LayerMask _groundLayer;
-        [SerializeField] private int _detectorCount = 3;
-        [SerializeField] private float _detectionRayLength = 0.1f;
-        [SerializeField] [Range(0.1f, 0.3f)] private float _rayBuffer = 0.1f; // Prevents side detectors hitting the ground
-
-        private RayRange _raysUp, _raysRight, _raysDown, _raysLeft;
-        private bool _colUp, _colRight, _colDown, _colLeft;
-
-        private float _timeLeftGrounded;
-
-        // We use these raycast checks for pre-collision information
-        private void RunCollisionChecks() {
-            // Generate ray ranges. 
-            CalculateRayRanged();
-
-            // Ground
-            LandingThisFrame = false;
-            var groundedCheck = RunDetection(_raysDown);
-            if (_colDown && !groundedCheck) _timeLeftGrounded = Time.time; // Only trigger when first leaving
-            else if (!_colDown && groundedCheck) {
-                _coyoteUsable = true; // Only trigger when first touching
-                LandingThisFrame = true;
-            }
-
-            _colDown = groundedCheck;
-
-            // The rest
-            _colUp = RunDetection(_raysUp);
-            _colLeft = RunDetection(_raysLeft);
-            _colRight = RunDetection(_raysRight);
-
-            bool RunDetection(RayRange range) {
-                return EvaluateRayPositions(range).Any(point => Physics2D.Raycast(point, range.Dir, _detectionRayLength, _groundLayer));
-            }
-        }
-
-        private void CalculateRayRanged() {
-            // This is crying out for some kind of refactor. 
-            var b = new Bounds(transform.position, _characterBounds.size);
-
-            _raysDown = new RayRange(b.min.x + _rayBuffer, b.min.y, b.max.x - _rayBuffer, b.min.y, Vector2.down);
-            _raysUp = new RayRange(b.min.x + _rayBuffer, b.max.y, b.max.x - _rayBuffer, b.max.y, Vector2.up);
-            _raysLeft = new RayRange(b.min.x, b.min.y + _rayBuffer, b.min.x, b.max.y - _rayBuffer, Vector2.left);
-            _raysRight = new RayRange(b.max.x, b.min.y + _rayBuffer, b.max.x, b.max.y - _rayBuffer, Vector2.right);
-        }
-
-
-        private IEnumerable<Vector2> EvaluateRayPositions(RayRange range) {
-            for (var i = 0; i < _detectorCount; i++) {
-                var t = (float)i / (_detectorCount - 1);
-                yield return Vector2.Lerp(range.Start, range.End, t);
-            }
-        }
-
-        private void OnDrawGizmos() {
-            // Bounds
-            Gizmos.color = Color.yellow;
-            Gizmos.DrawWireCube(transform.position + _characterBounds.center, _characterBounds.size);
-
-            // Rays
-            if (!Application.isPlaying) {
-                CalculateRayRanged();
-                Gizmos.color = Color.blue;
-                foreach (var range in new List<RayRange> { _raysUp, _raysRight, _raysDown, _raysLeft }) {
-                    foreach (var point in EvaluateRayPositions(range)) {
-                        Gizmos.DrawRay(point, range.Dir * _detectionRayLength);
-                    }
-                }
-            }
-
-            if (!Application.isPlaying) return;
-
-            // Draw the future position. Handy for visualizing gravity
-            Gizmos.color = Color.red;
-            var move = new Vector3(_currentHorizontalSpeed, _currentVerticalSpeed) * Time.deltaTime;
-            Gizmos.DrawWireCube(transform.position + move, _characterBounds.size);
         }
 
         #endregion
@@ -217,7 +136,7 @@ namespace TarodevController {
         private float _fallSpeed;
 
         private void CalculateGravity() {
-            if (_colDown) {
+            if (_playerCollision.ColDown) {
                 // Move out of the ground
                 if (_currentVerticalSpeed < 0) _currentVerticalSpeed = 0;
             }
@@ -239,18 +158,18 @@ namespace TarodevController {
 
         [Header("JUMPING")] [SerializeField] private float _jumpHeight = 30;
         [SerializeField] private float _jumpApexThreshold = 10f;
-        [SerializeField] private float _coyoteTimeThreshold = 0.1f;
+     
         [SerializeField] private float _jumpBuffer = 0.1f;
         [SerializeField] private float _jumpEndEarlyGravityModifier = 3;
-        private bool _coyoteUsable;
+        
         private bool _endedJumpEarly = true;
         private float _apexPoint; // Becomes 1 at the apex of a jump
         private float _lastJumpPressed;
-        private bool CanUseCoyote => _coyoteUsable && !_colDown && _timeLeftGrounded + _coyoteTimeThreshold > Time.time;
-        private bool HasBufferedJump => _colDown && _lastJumpPressed + _jumpBuffer > Time.time;
+        
+        private bool HasBufferedJump => _playerCollision.ColDown && _lastJumpPressed + _jumpBuffer > Time.time;
 
         private void CalculateJumpApex() {
-            if (!_colDown) {
+            if (!_playerCollision.ColDown) {
                 // Gets stronger the closer to the top of the jump
                 _apexPoint = Mathf.InverseLerp(_jumpApexThreshold, 0, Mathf.Abs(Velocity.y));
                 _fallSpeed = Mathf.Lerp(_minFallSpeed, _maxFallSpeed, _apexPoint);
@@ -264,7 +183,8 @@ namespace TarodevController {
 
         #region Move
 
-        [Header("MOVE")] [SerializeField, Tooltip("Raising this value increases collision accuracy at the cost of performance.")]
+        [Header("MOVE")] 
+        [SerializeField, Tooltip("Raising this value increases collision accuracy at the cost of performance.")]
         private int _freeColliderIterations = 10;
 
         // We cast our bounds before moving to avoid future collisions
@@ -275,8 +195,14 @@ namespace TarodevController {
             var furthestPoint = pos + move;
 
             // check furthest movement. If nothing hit, move and don't do extra checks
-            var hit = Physics2D.OverlapBox(furthestPoint, _characterBounds.size, 0, _groundLayer);
-            if (!hit) {
+            var hit = Physics2D.OverlapBox(
+                furthestPoint,
+                _playerCollision.CharacterBounds,
+                0,
+                _playerCollision.GroundLayer
+            );
+            if (!hit)
+            {
                 transform.position += move;
                 return;
             }
@@ -288,11 +214,18 @@ namespace TarodevController {
                 var t = (float)i / _freeColliderIterations;
                 var posToTry = Vector2.Lerp(pos, furthestPoint, t);
 
-                if (Physics2D.OverlapBox(posToTry, _characterBounds.size, 0, _groundLayer)) {
+                if (Physics2D.OverlapBox(
+                        posToTry,
+                        _playerCollision.CharacterBounds,
+                        0,
+                        _playerCollision.GroundLayer)
+                   )
+                {
                     transform.position = positionToMoveTo;
 
                     // We've landed on a corner or hit our head on a ledge. Nudge the player gently
-                    if (i == 1) {
+                    if (i == 1)
+                    {
                         if (_currentVerticalSpeed < 0) _currentVerticalSpeed = 0;
                         var dir = transform.position - hit.transform.position;
                         transform.position += dir.normalized * move.magnitude;

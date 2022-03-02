@@ -597,6 +597,10 @@ PrefabInstance:
       propertyPath: m_LocalPosition.y
       value: -0.3
       objectReference: {fileID: 0}
+    - target: {fileID: 3648609768116671546, guid: 42303504a4fc90a43bc5178df9876bf2, type: 3}
+      propertyPath: _characterBounds.m_Center.y
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 4041608340279201150, guid: 42303504a4fc90a43bc5178df9876bf2, type: 3}
       propertyPath: m_Mass
       value: 1

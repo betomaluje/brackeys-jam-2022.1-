@@ -19624,6 +19624,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6432609860406773170}
   - component: {fileID: 6432609860406773168}
+  - component: {fileID: 3648609768116671546}
   - component: {fileID: 1001625218}
   - component: {fileID: 1918904458782096623}
   m_Layer: 3
@@ -19661,15 +19662,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bbfb23717f7dee14688bccda60b77b9d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _characterBounds:
-    m_Center: {x: 0, y: -0.4, z: 0}
-    m_Extent: {x: 0.25, y: 0.3, z: 0}
-  _groundLayer:
-    serializedVersion: 2
-    m_Bits: 64
-  _detectorCount: 4
-  _detectionRayLength: 0.2
-  _rayBuffer: 0.1
   _acceleration: 90
   _moveClamp: 13
   _deAcceleration: 60
@@ -19679,10 +19671,32 @@ MonoBehaviour:
   _maxFallSpeed: 100
   _jumpHeight: 20
   _jumpApexThreshold: 10
-  _coyoteTimeThreshold: 0.1
   _jumpBuffer: 0.1
   _jumpEndEarlyGravityModifier: 3
   _freeColliderIterations: 10
+--- !u!114 &3648609768116671546
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6432609860406773169}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5a63e6a1ae824b619e8168f78c17cfb5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _characterBounds:
+    m_Center: {x: 0, y: -0.35, z: 0}
+    m_Extent: {x: 0.2, y: 0.3, z: 0}
+  _groundLayer:
+    serializedVersion: 2
+    m_Bits: 64
+  _detectorCount: 3
+  _detectionRayLength: 0.5
+  _rayBuffer: 0.1
+  _coyoteTimeThreshold: 0.1
+  CoyoteUsable: 1
 --- !u!114 &1001625218
 MonoBehaviour:
   m_ObjectHideFlags: 0
