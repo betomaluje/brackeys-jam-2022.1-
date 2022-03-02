@@ -1,0 +1,17 @@
+{
+  "name": "com.berserkpixel.flytta",
+  "version": "1.0.0",
+  "displayName": "Flytta: Simple Camera Triggers",
+  "description": "Move the camera to a specific location when triggered",
+  "unity": "2019.4",
+  "keywords": [
+    "dialog",
+    "dialog system",
+    "tool"
+  ],
+  "author": {
+    "name": "Berserk Pixel Game Studio",
+    "email": "hello@berserkpixel.studio",
+    "url": "https://berserkpixel.studio/"
+  }
+}
